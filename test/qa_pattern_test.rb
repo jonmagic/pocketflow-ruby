@@ -1,12 +1,6 @@
-require_relative "test_helper"
+# frozen_string_literal: true
 
-def call_llm(question)
-  if question.include?("PocketFlow")
-    "PocketFlow is a TypeScript library for building reliable AI pipelines with a focus on composition and reusability."
-  else
-    "I don't know the answer to that question."
-  end
-end
+require_relative "test_helper"
 
 class QaPatternTest < Minitest::Test
   class GetQuestionNode < Pocketflow::Node

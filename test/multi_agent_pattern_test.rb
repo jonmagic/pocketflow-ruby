@@ -1,6 +1,6 @@
-require_relative "test_helper"
+# frozen_string_literal: true
 
-SharedStorage = Hash
+require_relative "test_helper"
 
 def mock_llm(prompt)
   return "This is a hint: Something cold on a stick" if prompt.include?("Generate hint")

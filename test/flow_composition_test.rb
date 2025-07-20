@@ -1,6 +1,6 @@
-require_relative "test_helper"
+# frozen_string_literal: true
 
-SharedStorage = Hash
+require_relative "test_helper"
 
 class FlowCompositionTest < Minitest::Test
   class NumberNode < Pocketflow::Node

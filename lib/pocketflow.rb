@@ -140,9 +140,7 @@ module Pocketflow
     # Returns the BaseNode successor or nil.
     def get_next_node(action = DEFAULT_ACTION)
       action = DEFAULT_ACTION if action.nil? || action.empty?
-      next_node = @successors[action]
-      warn "Flow ends: '#{action}' not found in #{successors.keys}" if next_node.nil? && !@successors.empty?
-      next_node
+      @successors[action]
     end
 
     # Internal: Shallow‑clone the node so that params/successors are isolated.

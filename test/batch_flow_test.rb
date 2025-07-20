@@ -1,7 +1,6 @@
-require_relative "test_helper"
+# frozen_string_literal: true
 
-SharedStorage = Hash
-BatchParams = Hash
+require_relative "test_helper"
 
 class AsyncDataProcessNode < Pocketflow::Node
   def prep(shared)
