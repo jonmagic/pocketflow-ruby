@@ -1,10 +1,6 @@
+# frozen_string_literal: true
+
 require_relative "test_helper"
-
-SharedStorage = Hash
-
-def call_llm(prompt)
-  "Summary for: #{prompt[0, 20]}..."
-end
 
 class MapReducePatternTest < Minitest::Test
   class SummarizeAllFiles < Pocketflow::BatchNode

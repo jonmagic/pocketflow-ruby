@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative "test_helper"
 
 class ParallelBatchNodeTest < Minitest::Test
@@ -66,22 +68,6 @@ class ParallelBatchNodeTest < Minitest::Test
     def exec(num)
       num + 1
     end
-    def post(shared, _prep, exec_res)
-      shared[:final_results] = exec_res
-      "completed"
-    end
-  end
-
-  # Test-specific ProcessResultsNode for integration test
-  class ProcessResultsNode < Pocketflow::ParallelBatchNode
-    def prep(shared)
-      shared[:processed_numbers] || []
-    end
-
-    def exec(num)
-      num + 1
-    end
-
     def post(shared, _prep, exec_res)
       shared[:final_results] = exec_res
       "completed"

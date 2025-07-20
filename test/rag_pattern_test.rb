@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative "test_helper"
 
 # ---------- Mock helpers ----------
@@ -20,7 +22,7 @@ def search_index(index, query, top_k: 1)
   [[selected.map(&:first)], [selected.map(&:last)]]
 end
 
-def call_llm(prompt)
+def rag_call_llm(prompt)
   "Answer based on: #{prompt[0, 30]}..."
 end
 
@@ -118,7 +120,7 @@ class GenerateAnswer < Pocketflow::Node
   def exec(arr)
     q, chunk = arr
     prompt = "Question: #{q}\nContext: #{chunk}\nAnswer:"
-    call_llm(prompt)
+    rag_call_llm(prompt)
   end
 
   def post(shared, _prep, answer)

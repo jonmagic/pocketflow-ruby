@@ -1,6 +1,6 @@
-require_relative "test_helper"
+# frozen_string_literal: true
 
-SharedStorage = Hash
+require_relative "test_helper"
 
 class FlowBasicTest < Minitest::Test
   class NumberNode < Pocketflow::Node
@@ -135,7 +135,7 @@ class FlowBasicTest < Minitest::Test
     start.next(check).on("positive", add_pos).on("negative", add_neg)
     pipeline = Pocketflow::Flow.new(start)
     pipeline.run(shared)
-    assert_equal -25, shared[:current]
+    assert_equal(-25, shared[:current])
   end
 
   def test_cycle_until_negative
@@ -148,7 +148,7 @@ class FlowBasicTest < Minitest::Test
     subtract3.next(check)
     pipeline = Pocketflow::Flow.new(n1)
     pipeline.run(shared)
-    assert_equal -2, shared[:current]
+    assert_equal(-2, shared[:current])
   end
 
   def test_retry_functionality
@@ -178,6 +178,6 @@ class FlowBasicTest < Minitest::Test
     square.next(doub).next(neg)
     pipeline = Pocketflow::Flow.new(square)
     pipeline.run(shared)
-    assert_equal -50, shared[:current]
+    assert_equal(-50, shared[:current])
   end
 end

@@ -1,6 +1,6 @@
-require_relative "test_helper"
+# frozen_string_literal: true
 
-SharedStorage = Hash
+require_relative "test_helper"
 
 class CoreAbstractionExamplesTest < Minitest::Test
   class SummarizeFile < Pocketflow::Node

@@ -1,6 +1,6 @@
-require_relative "test_helper"
+# frozen_string_literal: true
 
-SharedStorage = Hash
+require_relative "test_helper"
 
 class AsyncArrayChunkNode < Pocketflow::BatchNode
   def initialize(chunk_size = 10, max_retries = 1, wait = 0)
@@ -54,6 +54,8 @@ class ErrorBatchNode < Pocketflow::BatchNode
     item
   end
 end
+
+require_relative "test_helper"
 
 class BatchNodeTest < Minitest::Test
   # Test-specific BatchNode subclasses
