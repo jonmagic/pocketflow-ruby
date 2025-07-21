@@ -241,7 +241,7 @@ module Pocketflow
     # Internal: Clone this node for use in a thread, preserving state
     def clone_for_thread
       # Use Object#clone to preserve singleton methods and instance variables
-      cloned = Object.instance_method(:clone).bind(self).call
+      cloned = clone
       cloned.instance_variable_set(:@params, @params.dup) if @params
       cloned
     end
