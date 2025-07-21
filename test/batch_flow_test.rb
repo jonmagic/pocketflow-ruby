@@ -11,7 +11,9 @@ class AsyncDataProcessNode < Pocketflow::Node
     data
   end
 
-  def exec(prep_res) = prep_res
+  def exec(prep_res)
+    prep_res
+  end
 
   def post(shared, _prep_res, exec_res)
     key = @params[:key]

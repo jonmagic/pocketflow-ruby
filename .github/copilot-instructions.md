@@ -2,15 +2,15 @@
 
 ## Architecture Overview
 
-PocketFlow Ruby is a synchronous workflow orchestration library ported from TypeScript, designed around a simple node-graph execution model. The entire library is contained in a single file: `lib/pocketflow.rb`.
+PocketFlow Ruby is a synchronous workflow orchestration library for Ruby 2.7+ ported from TypeScript, designed around a simple node-graph execution model. The entire library is contained in a single file: `lib/pocketflow.rb`.
 
 ### Core Components
 
 - **BaseNode**: The fundamental execution unit with `prep → exec → post` lifecycle
 - **Node**: Extends BaseNode with retry/wait behavior around `exec`
-- **BatchNode/ParallelBatchNode**: Process arrays sequentially (parallel variants run sequentially for now)
+- **BatchNode/ParallelBatchNode**: Process arrays sequentially/concurrently using threads
 - **Flow**: Orchestrates node execution following action-based transitions
-- **BatchFlow/ParallelBatchFlow**: Execute flows once per parameter set
+- **BatchFlow/ParallelBatchFlow**: Execute flows once per parameter set, sequentially/concurrently
 
 ### Key Patterns
 
@@ -44,13 +44,18 @@ review_node.on("approved", payment_node)
 
 **Node Composition**: Build complex workflows by composing simple, single-purpose nodes rather than monolithic ones.
 
+**Concurrency**: Use `ParallelBatchNode` and `ParallelBatchFlow` for I/O-bound tasks like LLM API calls and shell commands where Ruby's GVL is released for true parallelism.
+
+**Thread Safety**: Parallel nodes automatically handle thread safety by cloning node instances and safely merging shared context results.
+
 ## Common Patterns from Tests
 
 **QA Pattern**: Question → Answer flow with shared context passing
 **RAG Pattern**: Chunk → Embed → Store → Query → Retrieve → Generate pipeline
-**MapReduce**: BatchNode for mapping, followed by reduction node
+**MapReduce**: BatchNode for mapping, followed by reduction node (use ParallelBatchNode for concurrent mapping)
 **Multi-Agent**: Self-referencing nodes with queue-based message passing
 **Conditional Branching**: Use `post` return values to route between different node paths
+**Concurrent I/O**: ParallelBatchNode/ParallelBatchFlow for API calls, shell commands, file operations
 
 ## Testing Patterns
 

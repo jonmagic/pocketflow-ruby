@@ -8,11 +8,11 @@ Gem::Specification.new do |spec|
   spec.authors = ["Jonathan Hoyt"]
   spec.email = ["jonmagic@gmail.com"]
 
-  spec.summary = "pocketflow.rb is a Ruby port of the original Python version - a minimalist LLM framework."
-  spec.description = "Pocket Flow: A minimalist LLM framework. Let Agents build Agents!"
+  spec.summary = "A minimal, synchronous workflow library, ported from PocketFlow TypeScript."
+  spec.description = "PocketFlow Ruby is a minimal workflow orchestration library designed around a simple node-graph execution model, with Thread-based concurrency for I/O-bound operations."
   spec.homepage = "https://github.com/jonmagic/PocketFlow-Ruby"
   spec.license = "MIT"
-  spec.required_ruby_version = ">= 3.1.0"
+  spec.required_ruby_version = ">= 2.7.0"
 
   spec.metadata["homepage_uri"] = spec.homepage
   spec.metadata["source_code_uri"] = spec.homepage
