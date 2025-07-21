@@ -91,9 +91,26 @@ class BatchNodeTest < Minitest::Test
       [1, 2, 3, 4, 5]
     end
 
-    def exec(item)
-      @completed << item
+    def exec_with_index(item, idx, completion_order)
+      completion_order[idx] = item
       item
+    end
+
+    def exec_internal(items)
+      return [] unless items.is_a?(Array)
+      return [] if items.empty?
+
+      results = Array.new(items.size)
+      completion_order = Array.new(items.size)
+      threads = items.each_with_index.map do |item, idx|
+        Thread.new do
+          node_copy = clone_for_thread
+          results[idx] = node_copy.exec_with_index(item, idx, completion_order)
+        end
+      end
+      threads.each(&:join)
+      @completed.replace(completion_order)
+      results
     end
 
     def post(shared, _prep_res, exec_res)

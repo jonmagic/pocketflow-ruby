@@ -223,22 +223,20 @@ module Pocketflow
 
   # Public: ParallelBatchNode processes items concurrently using threads.
   class ParallelBatchNode < Node
-    # Internal: Process Array items concurrently using threads.
+    # Internal: Process Array items concurrently using threads, preserving order.
     def exec_internal(items)
       return [] unless items.is_a?(Array)
       return [] if items.empty?
 
-      # Create threads for each item
-      threads = items.map do |item|
+      results = Array.new(items.size)
+      threads = items.each_with_index.map do |item, idx|
         Thread.new do
-          # Create a fresh node instance but copy essential state
           node_copy = clone_for_thread
-          node_copy.send(:exec_with_retry, item)
+          results[idx] = node_copy.send(:exec_with_retry, item)
         end
       end
-
-      # Wait for all threads and collect results in original order
-      threads.map(&:value)
+      threads.each(&:join)
+      results
     end
 
     private
