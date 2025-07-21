@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Ruby ${{ matrix.ruby }}
     strategy:
+      fail-fast: false
       matrix:
         ruby:
           - '2.5'
@@ -22,6 +23,16 @@ jobs:
           - '3.2'
           - '3.3'
           - '3.4'
+        include:
+          # Use older bundler for Ruby < 3.1 to avoid compatibility issues
+          - ruby: '2.5'
+            bundler: '2.3.26'
+          - ruby: '2.6'
+            bundler: '2.3.26'
+          - ruby: '2.7'
+            bundler: '2.3.26'
+          - ruby: '3.0'
+            bundler: '2.3.26'
 
     steps:
       - uses: actions/checkout@v4
@@ -30,5 +41,6 @@ jobs:
         with:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true
+          bundler: ${{ matrix.bundler }}
       - name: Run the default task
         run: bundle exec rake
