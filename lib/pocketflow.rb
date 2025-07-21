@@ -28,6 +28,9 @@ module Pocketflow
   # Public: Default action name used when a node's +post+ does not specify one.
   DEFAULT_ACTION = "default"
 
+  # Public: Default action name used by batch processing nodes to indicate completion.
+  PROCESSED_ACTION = "processed"
+
   # Public: BaseNode is the minimal building block of a Pocketflow graph.
   #
   # A node's lifecycle is **prep → exec → post**. Override those hooks to
@@ -392,7 +395,7 @@ module Pocketflow
 
       # Now run the successor nodes (like aggregator) with the merged results
       if @start.successors.any?
-        action = "processed"  # Default action from processor nodes
+        action = PROCESSED_ACTION  # Default action from processor nodes
         current = @start.get_next_node(action)&.clone
         while current
           current.set_params(@params)
