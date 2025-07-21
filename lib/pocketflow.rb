@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Public: Pocketflow – A tiny, synchronous workflow library for Ruby 3.4+.
+# Public: Pocketflow – A tiny, synchronous workflow library for Ruby 2.5+.
 #
 # The library mirrors sibling implementations in TypeScript, Python, Go and
 # Java while embracing plain‑old Ruby objects and language idioms. "Parallel"
@@ -85,14 +85,18 @@ module Pocketflow
     # shared - The shared context passed through the entire flow.
     #
     # Returns an arbitrary prep object.
-    def prep(shared) = nil
+    def prep(shared)
+      nil
+    end
 
     # Public: Perform the primary work. Override in subclasses.
     #
     # prep_res - The value returned by +prep+.
     #
     # Returns an arbitrary execution result.
-    def exec(prep_res) = nil
+    def exec(prep_res)
+      nil
+    end
 
     # Public: Process results and decide the next action. Override in subclasses.
     #
@@ -101,7 +105,9 @@ module Pocketflow
     # exec_res  - The object returned by +exec+.
     #
     # Returns the String action name or +nil+ / DEFAULT_ACTION.
-    def post(shared, prep_res, exec_res) = nil
+    def post(shared, prep_res, exec_res)
+      nil
+    end
 
     # Internal: Wrapper around the node lifecycle.
     #
@@ -120,7 +126,9 @@ module Pocketflow
     # prep_res - The object returned by +prep+.
     #
     # Returns whatever +exec+ returns.
-    def exec_internal(prep_res) = exec(prep_res)
+    def exec_internal(prep_res)
+      exec(prep_res)
+    end
 
     # Public: Execute this node as a standalone unit.
     #
@@ -312,7 +320,9 @@ module Pocketflow
     end
 
     # Public: Override to supply an Array of Hash‑like parameter sets.
-    def prep(shared) = []
+    def prep(shared)
+      []
+    end
   end
 
   # Public: ParallelBatchFlow runs batch flows concurrently using threads.

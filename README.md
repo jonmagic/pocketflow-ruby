@@ -1,6 +1,6 @@
 # PocketFlow Ruby
 
-PocketFlow Ruby is a minimal, synchronous workflow library for Ruby 3.4+, **ported from the excellent [PocketFlow project](https://github.com/The-Pocket/PocketFlow)** by [The Pocket](https://www.thepocket.io/). This version draws inspiration primarily from the TypeScript implementation and reimagines it using idiomatic Ruby and plain-old Ruby objects. It aims to maintain API consistency across languages while being lightweight and extensible.
+PocketFlow Ruby is a minimal, synchronous workflow library for Ruby 2.5+, **ported from the excellent [PocketFlow project](https://github.com/The-Pocket/PocketFlow)** by [The Pocket](https://www.thepocket.io/). This version draws inspiration primarily from the TypeScript implementation and reimagines it using idiomatic Ruby and plain-old Ruby objects. It aims to maintain API consistency across languages while being lightweight and extensible.
 
 > [!NOTE]
 > This library is a community-maintained port and is not affiliated with or officially supported by the original PocketFlow maintainers.
