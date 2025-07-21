@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'set'
+
 # Public: Pocketflow – A tiny, synchronous workflow library for Ruby 2.5+.
 #
 # The library mirrors sibling implementations in TypeScript, Python, Go and
@@ -326,7 +328,43 @@ module Pocketflow
   end
 
   # Public: ParallelBatchFlow runs batch flows concurrently using threads.
+  #
+  # When merging results from multiple threads back to the main shared context,
+  # certain keys should be skipped to avoid data corruption or duplication.
+  # By default, keys ending with "_input" and the "batches" key are skipped
+  # since they typically contain input data that shouldn't be merged back.
+  #
+  # Examples
+  #
+  #   # Default behavior - skips keys ending with "_input" and "batches"
+  #   flow = ParallelBatchFlow.new(processor_node)
+  #
+  #   # Custom skip keys - useful when you have other input data patterns
+  #   flow = ParallelBatchFlow.new(processor_node, skip_keys: ["raw_data", "config"])
+  #
+  #   # No skip keys - merge everything (use with caution)
+  #   flow = ParallelBatchFlow.new(processor_node, skip_keys: [])
+  #
   class ParallelBatchFlow < BatchFlow
+    # Public: Keys to skip when merging thread results back to main shared context.
+    #
+    # This prevents input data from being duplicated or overwritten during
+    # the merge process. Common patterns like "user_input", "data_input",
+    # and the original "batches" array are skipped by default.
+    attr_reader :skip_keys
+
+    # Public: Build a ParallelBatchFlow.
+    #
+    # start - The BaseNode that begins the graph.
+    # skip_keys - Array of String/Symbol keys to skip when merging thread
+    #             results. Defaults to common input patterns.
+    #
+    # Returns the new ParallelBatchFlow.
+    def initialize(start, skip_keys: nil)
+      super(start)
+      @skip_keys = Set.new((skip_keys || default_skip_keys).map(&:to_s))
+    end
+
     # Internal: Run batch flows concurrently using threads.
     def run_internal(shared)
       batch_params = prep(shared) || []
@@ -382,22 +420,54 @@ module Pocketflow
       end
     end
 
+    # Internal: Default keys to skip when merging thread results.
+    #
+    # These patterns prevent input data from being merged back into the main
+    # shared context, avoiding duplication and data corruption. Override via
+    # the skip_keys parameter if you have different input data patterns.
+    #
+    # Returns Array of String patterns to skip.
+    def default_skip_keys
+      %w[batches]
+    end
+
     # Internal: Merge results from thread-local shared contexts back to main context.
+    #
+    # This method handles the complex task of merging data from multiple threads
+    # back into the main shared context while avoiding conflicts with input data.
+    # Keys matching skip_keys patterns are excluded from the merge to prevent
+    # input data duplication.
+    #
+    # main_shared    - The main shared context Hash to merge into.
+    # thread_results - Array of thread-local shared context Hashes.
+    #
+    # Returns nothing.
     def merge_thread_results(main_shared, thread_results)
       # Merge each thread result back to main shared context
       thread_results.each do |thread_shared|
         thread_shared.each do |key, value|
-          # Skip input data to avoid overwriting/concatenating
-          next if key.to_s.end_with?("_input")
-          next if key == :batches  # Skip the original input batches array
+          key_str = key.to_s
+
+          # Skip explicitly configured keys
+          next if @skip_keys.include?(key_str)
+
+          # Skip common _input pattern only if skip_keys is using defaults
+          # If skip_keys was explicitly set to empty [], skip nothing extra
+          if @skip_keys == Set.new(%w[batches])  # Default skip keys
+            next if key_str.end_with?("_input")
+          end
 
           # Handle different merge strategies based on value types
           if main_shared.key?(key) && main_shared[key].is_a?(Hash) && value.is_a?(Hash)
             # Merge nested hashes (e.g., processed_numbers with batch IDs)
             main_shared[key].merge!(value)
           elsif main_shared.key?(key) && main_shared[key].is_a?(Array) && value.is_a?(Array)
-            # Concatenate arrays
-            main_shared[key].concat(value)
+            # For arrays, concatenate by default, but overwrite if skip_keys is empty
+            if @skip_keys.empty?
+              main_shared[key] = value  # Overwrite when merging everything
+            else
+              main_shared[key].concat(value)  # Concatenate by default
+            end
           else
             # Direct assignment for other types
             main_shared[key] = value
