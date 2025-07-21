@@ -2,7 +2,7 @@
 
 require 'set'
 
-# Public: Pocketflow – A tiny, synchronous workflow library for Ruby 2.5+.
+# Public: Pocketflow – A tiny, synchronous workflow library for Ruby 2.7+.
 #
 # The library mirrors sibling implementations in TypeScript, Python, Go and
 # Java while embracing plain‑old Ruby objects and language idioms. "Parallel"

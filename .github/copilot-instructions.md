@@ -2,7 +2,7 @@
 
 ## Architecture Overview
 
-PocketFlow Ruby is a synchronous workflow orchestration library for Ruby 2.5+ ported from TypeScript, designed around a simple node-graph execution model. The entire library is contained in a single file: `lib/pocketflow.rb`.
+PocketFlow Ruby is a synchronous workflow orchestration library for Ruby 2.7+ ported from TypeScript, designed around a simple node-graph execution model. The entire library is contained in a single file: `lib/pocketflow.rb`.
 
 ### Core Components
 

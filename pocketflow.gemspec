@@ -12,7 +12,7 @@ Gem::Specification.new do |spec|
   spec.description = "PocketFlow Ruby is a minimal workflow orchestration library designed around a simple node-graph execution model, with Thread-based concurrency for I/O-bound operations."
   spec.homepage = "https://github.com/jonmagic/PocketFlow-Ruby"
   spec.license = "MIT"
-  spec.required_ruby_version = ">= 2.5.0"
+  spec.required_ruby_version = ">= 2.7.0"
 
   spec.metadata["homepage_uri"] = spec.homepage
   spec.metadata["source_code_uri"] = spec.homepage
