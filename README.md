@@ -5,7 +5,7 @@ PocketFlow Ruby is a minimal, synchronous workflow library for Ruby 3.4+, **port
 > [!NOTE]
 > This library is a community-maintained port and is not affiliated with or officially supported by the original PocketFlow maintainers.
 
-All "parallel" variants currently run sequentially, making it safe to adopt now and evolve toward concurrency later without breaking consumers.
+All "parallel" variants use **Thread-based concurrency** for I/O-bound tasks, providing true parallelism for operations like LLM API calls, shell commands, and database queries.
 
 ## Getting Started
 
@@ -28,10 +28,10 @@ PocketFlow is built around a handful of simple, composable concepts:
 - **BaseNode**: The fundamental unit of work, following a `prep → exec → post` lifecycle. Successor nodes are linked via actions.
 - **Node**: Extends `BaseNode` with configurable retry and wait behavior around `exec` (via `max_retries` and `wait`).
 - **BatchNode**: Processes an array of items sequentially, applying `exec` to each element.
-- **ParallelBatchNode**: API-compatible with `BatchNode`; runs sequentially for now.
+- **ParallelBatchNode**: Processes an array of items concurrently using threads, ideal for I/O-bound operations.
 - **Flow**: Orchestrates a graph of linked nodes, starting from a root node and following action-based transitions.
 - **BatchFlow**: Executes a flow once per parameter set returned by `prep`, useful for batch processing.
-- **ParallelBatchFlow**: API-compatible with `BatchFlow`; runs sequentially for now.
+- **ParallelBatchFlow**: Executes batch flows concurrently using threads, processing multiple parameter sets in parallel.
 
 ## Examples
 
@@ -195,6 +195,93 @@ puts shared[:final_result]
 flowchart LR
   MapChunks[MapChunks] --> ReduceResults[ReduceResults]
 ```
+
+## Concurrency
+
+PocketFlow provides Thread-based concurrency through `ParallelBatchNode` and `ParallelBatchFlow`, designed specifically for I/O-bound operations like API calls, file operations, and shell commands.
+
+### ParallelBatchNode
+
+Processes array items concurrently using threads. Perfect for I/O-bound tasks where Ruby's GVL is released:
+
+```ruby
+class APICallNode < Pocketflow::ParallelBatchNode
+  def prep(shared)
+    shared[:urls] || []
+  end
+
+  def exec(url)
+    # Each URL is processed concurrently
+    Net::HTTP.get(URI(url))
+  end
+
+  def post(shared, _prep, exec_res)
+    shared[:responses] = exec_res
+    "completed"
+  end
+end
+
+# Process 10 URLs concurrently instead of sequentially
+shared = { urls: Array.new(10) { |i| "https://api.example.com/data/#{i}" } }
+APICallNode.new.run(shared)
+```
+
+### ParallelBatchFlow
+
+Executes multiple batch parameter sets concurrently:
+
+```ruby
+class DataProcessorFlow < Pocketflow::ParallelBatchFlow
+  def prep(shared)
+    # Return array of parameter sets - each will run concurrently
+    shared[:datasets].map { |name| { dataset_name: name } }
+  end
+end
+
+processor = ProcessDataNode.new
+flow = DataProcessorFlow.new(processor)
+shared = { datasets: ["users", "orders", "products"] }
+flow.run(shared)  # Processes all datasets concurrently
+```
+
+### Thread Safety
+
+PocketFlow handles thread safety for you:
+
+- **Node Isolation**: Each thread gets its own node instance
+- **Shared Context**: Results are safely merged back to the main shared context
+- **State Preservation**: Instance variables and params are properly copied to threads
+
+### Use Cases
+
+Parallel variants excel with I/O-bound operations:
+
+- **LLM API calls**: Process multiple prompts concurrently
+- **Shell commands**: Run system operations in parallel
+- **HTTP requests**: Fetch data from multiple APIs
+- **File operations**: Read/write multiple files
+- **Database queries**: Execute independent queries concurrently
+
+```ruby
+# Example: Concurrent LLM calls
+class LLMNode < Pocketflow::ParallelBatchNode
+  def prep(shared)
+    shared[:prompts] || []
+  end
+
+  def exec(prompt)
+    # Each prompt processed concurrently
+    llm_client.complete(prompt)
+  end
+
+  def post(shared, _prep, responses)
+    shared[:llm_responses] = responses
+    "completed"
+  end
+end
+```
+
+**Performance Note**: Thread-based concurrency provides significant speedups for I/O operations but won't improve CPU-bound tasks due to Ruby's GVL.
 
 ### Multi-Agent Pattern
 

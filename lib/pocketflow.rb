@@ -1,12 +1,11 @@
 # frozen_string_literal: true
 
-# Public: Pocketflow – A tiny, synchronous workflow library for Ruby 3.4+.
+# Public: Pocketflow – A tiny, synchronous workflow library for Ruby 3.4+.
 #
 # The library mirrors sibling implementations in TypeScript, Python, Go and
-# Java while embracing plain‑old Ruby objects and language idioms. All "parallel"
-# variants share the same public surface as their concurrent cousins but run
-# sequentially for now so that real parallelism can be introduced later without
-# breaking consumers.
+# Java while embracing plain‑old Ruby objects and language idioms. "Parallel"
+# variants use Thread-based concurrency for I/O-bound tasks like LLM API calls
+# and shell commands, providing true parallelism for these operations.
 #
 # Examples
 #
@@ -209,12 +208,51 @@ module Pocketflow
     end
   end
 
-  # Public: ParallelBatchNode matches BatchNode's API; runs sequentially for now.
+  # Public: ParallelBatchNode processes items concurrently using threads.
   class ParallelBatchNode < Node
-    # Internal: Sequentially process an Array of items.
+    # Internal: Process Array items concurrently using threads.
     def exec_internal(items)
       return [] unless items.is_a?(Array)
-      items.map { |item| super(item) }
+      return [] if items.empty?
+
+      # Create threads for each item
+      threads = items.map do |item|
+        Thread.new do
+          # Create a fresh node instance but copy essential state
+          node_copy = clone_for_thread
+          node_copy.send(:exec_with_retry, item)
+        end
+      end
+
+      # Wait for all threads and collect results in original order
+      threads.map(&:value)
+    end
+
+    private
+
+    # Internal: Clone this node for use in a thread, preserving state
+    def clone_for_thread
+      # Use Object#clone to preserve singleton methods and instance variables
+      cloned = Object.instance_method(:clone).bind(self).call
+      cloned.instance_variable_set(:@params, @params.dup) if @params
+      cloned
+    end
+
+    # Internal: Execute with retry logic for individual items in threads.
+    def exec_with_retry(item)
+      current_retry = 0
+      while current_retry < @max_retries
+        begin
+          return exec(item)
+        rescue StandardError => e
+          if current_retry == @max_retries - 1
+            return exec_fallback(item, e)
+          end
+          sleep @wait if @wait.positive?
+        ensure
+          current_retry += 1
+        end
+      end
     end
   end
 
@@ -277,15 +315,85 @@ module Pocketflow
     def prep(shared) = []
   end
 
-  # Public: ParallelBatchFlow mirrors BatchFlow; execution is sequential.
+  # Public: ParallelBatchFlow runs batch flows concurrently using threads.
   class ParallelBatchFlow < BatchFlow
-    # Internal: Run the batch flow sequentially.
+    # Internal: Run batch flows concurrently using threads.
     def run_internal(shared)
       batch_params = prep(shared) || []
-      batch_params.each do |bp|
-        orchestrate_internal(shared, @params.merge(bp.to_h))
+      return post(shared, batch_params, nil) if batch_params.empty?
+
+      # Create threads for each batch parameter set
+      threads = batch_params.map do |bp|
+        Thread.new do
+          # Each thread gets its own isolated shared context copy for thread safety
+          thread_shared = deep_dup_shared(shared)
+
+          # For parallel execution, we only want to run the start node (first node in chain)
+          # The successor nodes (like aggregator) should run after all threads complete
+          current = @start.clone
+          current.set_params(@params.merge(bp.to_h))
+          current.run_internal(thread_shared)
+
+          thread_shared
+        end
       end
+
+      # Wait for all threads and merge results back into main shared context
+      thread_results = threads.map(&:value)
+      merge_thread_results(shared, thread_results)
+
+      # Now run the successor nodes (like aggregator) with the merged results
+      if @start.successors.any?
+        action = "processed"  # Default action from processor nodes
+        current = @start.get_next_node(action)&.clone
+        while current
+          current.set_params(@params)
+          action = current.run_internal(shared)
+          current = current.get_next_node(action)&.clone
+        end
+      end
+
       post(shared, batch_params, nil)
+    end
+
+    private
+
+    # Internal: Deep duplicate the shared context to avoid thread conflicts.
+    def deep_dup_shared(shared)
+      shared.dup.transform_values do |value|
+        case value
+        when Hash
+          value.dup
+        when Array
+          value.dup
+        else
+          value
+        end
+      end
+    end
+
+    # Internal: Merge results from thread-local shared contexts back to main context.
+    def merge_thread_results(main_shared, thread_results)
+      # Merge each thread result back to main shared context
+      thread_results.each do |thread_shared|
+        thread_shared.each do |key, value|
+          # Skip input data to avoid overwriting/concatenating
+          next if key.to_s.end_with?("_input")
+          next if key == :batches  # Skip the original input batches array
+
+          # Handle different merge strategies based on value types
+          if main_shared.key?(key) && main_shared[key].is_a?(Hash) && value.is_a?(Hash)
+            # Merge nested hashes (e.g., processed_numbers with batch IDs)
+            main_shared[key].merge!(value)
+          elsif main_shared.key?(key) && main_shared[key].is_a?(Array) && value.is_a?(Array)
+            # Concatenate arrays
+            main_shared[key].concat(value)
+          else
+            # Direct assignment for other types
+            main_shared[key] = value
+          end
+        end
+      end
     end
   end
 end

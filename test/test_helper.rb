@@ -5,6 +5,10 @@ require "pocketflow"
 
 require "minitest/autorun"
 
+# Suppress noisy thread exception reports during tests
+# Exception handling in parallel nodes is expected behavior
+Thread.report_on_exception = false
+
 # Shared constants used across tests
 SharedStorage = Hash unless defined?(SharedStorage)
 BatchParams = Hash unless defined?(BatchParams)
